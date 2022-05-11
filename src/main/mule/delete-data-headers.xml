@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="b4856620-bcbc-4867-96ff-5fc22a4e46cd" doc:description="This application is to delete a row from MySQL using headers" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="b440bbca-0c40-4ae1-b949-751e944a5829" >
+		<db:my-sql-connection host="localhost" port="3306" user="root" password="Asq@22w0rd#" database="northwind" />
+	</db:config>
+	<flow name="delete-data-headersFlow" doc:id="bb3504fe-f6ff-4430-a2fa-c7959350d0ac" >
+		<http:listener doc:name="Listener" doc:id="6677a2a3-f7a3-41fa-89fd-05dda1787981" doc:description="This application is to delete a row from MySQL using headers" config-ref="HTTP_Listener_config" path="my-db" allowedMethods="PUT"/>
+		<logger level="INFO" doc:name="Logger" doc:id="f21138f2-c99b-4785-ad5b-046a4479aa23" message='#["The submitted values of regionId and regiondescription are: " ++ attributes.headers.regionId ++ " and " ++ attributes.headers.regiondescription]'/>
+		<db:delete doc:name="Deleting date from MySQL" doc:id="38558f02-817a-4da8-92ef-f9c4da7bfc65" config-ref="Database_Config">
+			<db:sql ><![CDATA[DELETE FROM region
+WHERE regionId = :regionId AND regiondescription = :regiondescription]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{'regionId': attributes.headers.regionId,
+ 'regiondescription': attributes.headers.regiondescription
+ }]]]></db:input-parameters>
+		</db:delete>
+		<ee:transform doc:name="Transform Message" doc:id="8be85a2f-67d0-4dae-b714-bbd70c109fd0" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	'Message': "Data deleted Successfully!",
+	'Code':200
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>
